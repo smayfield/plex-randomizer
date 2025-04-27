@@ -1,0 +1,107 @@
+using System;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text.Json;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+
+namespace PlexRandomMovie
+{
+    class Program
+    {
+        // Replace with your own Plex server information
+        private const string PlexBaseUrl = "http://your-plex-server:32400";
+        private const string PlexToken = "your-plex-token";
+        private const string LibraryId = "your-library-id"; // The section ID of your movie library
+
+        static async Task Main(string[] args)
+        {
+            try
+            {
+                var movie = await GetRandomMovie();
+                
+                if (movie != null)
+                {
+                    Console.WriteLine("\nYour random movie selection:");
+                    Console.WriteLine($"Title: {movie.Title}");
+                    Console.WriteLine($"Year: {movie.Year}");
+                    Console.WriteLine($"Summary: {movie.Summary}");
+                    Console.WriteLine($"Rating: {movie.Rating}");
+                    Console.WriteLine($"Duration: {FormatDuration(movie.Duration)}");
+                }
+                else
+                {
+                    Console.WriteLine("No movies found in your library.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+
+            Console.WriteLine("\nPress any key to exit...");
+            Console.ReadKey();
+        }
+
+        static async Task<Movie> GetRandomMovie()
+        {
+            using (var client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                client.DefaultRequestHeaders.Add("X-Plex-Token", PlexToken);
+
+                // Get all movies from the specified library
+                var response = await client.GetAsync($"{PlexBaseUrl}/library/sections/{LibraryId}/all");
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
+                var options = new JsonDocumentOptions { AllowTrailingCommas = true };
+                using (JsonDocument document = JsonDocument.Parse(content, options))
+                {
+                    var root = document.RootElement;
+                    var mediaContainer = root.GetProperty("MediaContainer");
+                    
+                    if (mediaContainer.TryGetProperty("Metadata", out var metadata))
+                    {
+                        var movies = new List<Movie>();
+                        foreach (var item in metadata.EnumerateArray())
+                        {
+                            var movie = new Movie
+                            {
+                                Title = item.TryGetProperty("title", out var title) ? title.GetString() : "Unknown Title",
+                                Year = item.TryGetProperty("year", out var year) ? year.GetInt32() : 0,
+                                Summary = item.TryGetProperty("summary", out var summary) ? summary.GetString() : "No summary available",
+                                Rating = item.TryGetProperty("rating", out var rating) ? rating.GetDouble() : 0.0,
+                                Duration = item.TryGetProperty("duration", out var duration) ? duration.GetInt64() : 0
+                            };
+                            movies.Add(movie);
+                        }
+
+                        if (movies.Count > 0)
+                        {
+                            var random = new Random();
+                            return movies[random.Next(movies.Count)];
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        static string FormatDuration(long milliseconds)
+        {
+            TimeSpan t = TimeSpan.FromMilliseconds(milliseconds);
+            return $"{(int)t.TotalHours}h {t.Minutes}m";
+        }
+    }
+
+    class Movie
+    {
+        public string Title { get; set; }
+        public int Year { get; set; }
+        public string Summary { get; set; }
+        public double Rating { get; set; }
+        public long Duration { get; set; }
+    }
+}
