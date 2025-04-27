@@ -34,3 +34,4 @@ Example of the XML response:
 
 In this example, if "Movies" is your library, then your Library ID is "1".
 
+	
