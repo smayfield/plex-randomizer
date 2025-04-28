@@ -10,9 +10,9 @@ namespace Plex
     class Program
     {
         // Replace with your own Plex server information
-        private const string PlexBaseUrl = "http://your-plex-server:32400";
-        private const string PlexToken = "your-plex-token";
-        private const string LibraryId = "your-library-id"; // The section ID of your movie library
+        private const string PlexBaseUrl = "http://porg:32400";
+        private const string PlexToken = "mPswia_VBkPeKxRq-pc-";
+        private const string LibraryId = "3"; // The section ID of your movie library
 
         static async Task Main(string[] args)
         {
