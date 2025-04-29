@@ -4,18 +4,29 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Microsoft.Extensions.Configuration;
 
 namespace Plex
 {
     class Program
     {
-        // Replace with your own Plex server information
-        private const string PlexBaseUrl = "http://porg:32400";
-        private const string PlexToken = "mPswia_VBkPeKxRq-pc-";
-        private const string LibraryId = "3"; // The section ID of your movie library
+        private static IConfiguration Configuration { get; set; }
+        private static string PlexBaseUrl { get; set; }
+        private static string PlexToken { get; set; }
+        private static string LibraryId { get; set; }
 
         static async Task Main(string[] args)
         {
+            // Load configuration
+            Configuration = new ConfigurationBuilder()
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .Build();
+
+            // Get settings from configuration
+            PlexBaseUrl = Configuration["PlexSettings:BaseUrl"];
+            PlexToken = Configuration["PlexSettings:Token"];
+            LibraryId = Configuration["PlexSettings:LibraryId"];
+
             bool continueRunning = true;
             ConsoleKeyInfo keyInfo;
 
