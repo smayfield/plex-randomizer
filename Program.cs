@@ -45,6 +45,7 @@ namespace Plex
                         Console.WriteLine($"Summary: {movie.Summary}");
                         Console.WriteLine($"Rating: {movie.Rating}");
                         Console.WriteLine($"Duration: {FormatDuration(movie.Duration)}");
+                        Console.WriteLine($"Watched: {(movie.Watched ? "Yes" : "No")}");
                     }
                     else
                     {
@@ -95,7 +96,8 @@ namespace Plex
                                 Year = item.TryGetProperty("year", out var year) ? year.GetInt32() : 0,
                                 Summary = item.TryGetProperty("summary", out var summary) ? summary.GetString() : "No summary available",
                                 Rating = item.TryGetProperty("rating", out var rating) ? rating.GetDouble() : 0.0,
-                                Duration = item.TryGetProperty("duration", out var duration) ? duration.GetInt64() : 0
+                                Duration = item.TryGetProperty("duration", out var duration) ? duration.GetInt64() : 0,
+                                Watched = item.TryGetProperty("viewCount", out var viewCount) ? viewCount.GetInt32() > 0 : false
                             };
                             movies.Add(movie);
                         }
