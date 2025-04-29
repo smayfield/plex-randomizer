@@ -8,4 +8,5 @@ class Movie
     public double Rating { get; set; }
     public long Duration { get; set; }
     public bool Watched { get; set; }
+    public string Genre { get; set; }
 }

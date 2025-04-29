@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
+using System.Linq;
 
 namespace Plex
 {
@@ -42,6 +43,7 @@ namespace Plex
                         Console.WriteLine("\nYour random movie selection:");
                         Console.WriteLine($"Title: {movie.Title}");
                         Console.WriteLine($"Year: {movie.Year}");
+                        Console.WriteLine($"Genre: {movie.Genre}");
                         Console.WriteLine($"Summary: {movie.Summary}");
                         Console.WriteLine($"Rating: {movie.Rating}");
                         Console.WriteLine($"Duration: {FormatDuration(movie.Duration)}");
@@ -90,6 +92,24 @@ namespace Plex
                         var movies = new List<Movie>();
                         foreach (var item in metadata.EnumerateArray())
                         {
+                            // Extract genre information
+                            string genreText = "Unknown";
+                            if (item.TryGetProperty("Genre", out var genreArray))
+                            {
+                                var genres = new List<string>();
+                                foreach (var genre in genreArray.EnumerateArray())
+                                {
+                                    if (genre.TryGetProperty("tag", out var tag))
+                                    {
+                                        genres.Add(tag.GetString());
+                                    }
+                                }
+                                if (genres.Any())
+                                {
+                                    genreText = string.Join(", ", genres);
+                                }
+                            }
+
                             var movie = new Movie
                             {
                                 Title = item.TryGetProperty("title", out var title) ? title.GetString() : "Unknown Title",
@@ -97,7 +117,8 @@ namespace Plex
                                 Summary = item.TryGetProperty("summary", out var summary) ? summary.GetString() : "No summary available",
                                 Rating = item.TryGetProperty("rating", out var rating) ? rating.GetDouble() : 0.0,
                                 Duration = item.TryGetProperty("duration", out var duration) ? duration.GetInt64() : 0,
-                                Watched = item.TryGetProperty("viewCount", out var viewCount) ? viewCount.GetInt32() > 0 : false
+                                Watched = item.TryGetProperty("viewCount", out var viewCount) ? viewCount.GetInt32() > 0 : false,
+                                Genre = genreText
                             };
                             movies.Add(movie);
                         }
