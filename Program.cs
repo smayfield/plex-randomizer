@@ -56,10 +56,10 @@ namespace Plex
                     Console.WriteLine($"Error: {ex.Message}");
                 }
 
-                Console.WriteLine("\nPress any key to select a different movie or 'q' to quit...");
+                Console.WriteLine("\nPress any key to select a different movie or press 'ESC' to quit...");
                 keyInfo = Console.ReadKey(true);
                 
-                if (keyInfo.Key == ConsoleKey.Q)
+                if (keyInfo.Key == ConsoleKey.Escape)
                 {
                     continueRunning = false;
                 }
