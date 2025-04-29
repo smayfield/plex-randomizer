@@ -9,4 +9,5 @@ class Movie
     public long Duration { get; set; }
     public bool Watched { get; set; }
     public string Genre { get; set; }
+    public string PlaybackUrl { get; set; }
 }

@@ -15,6 +15,7 @@ namespace Plex
         private static string PlexBaseUrl { get; set; }
         private static string PlexToken { get; set; }
         private static string LibraryId { get; set; }
+        private static string PlexMachineIdentifier { get; set; }
 
         static async Task Main(string[] args)
         {
@@ -27,6 +28,9 @@ namespace Plex
             PlexBaseUrl = Configuration["PlexSettings:BaseUrl"];
             PlexToken = Configuration["PlexSettings:Token"];
             LibraryId = Configuration["PlexSettings:LibraryId"];
+            
+            // Get Plex server machine identifier
+            await GetPlexMachineIdentifier();
 
             bool continueRunning = true;
             ConsoleKeyInfo keyInfo;
@@ -51,6 +55,8 @@ namespace Plex
                         Console.WriteLine($"Rating: {movie.Rating}");
                         Console.WriteLine($"Duration: {FormatDuration(movie.Duration)}");
                         Console.WriteLine($"Watched: {(movie.Watched ? "Yes" : "No")}");
+                        Console.WriteLine("\nPlayback URL (paste into browser):");
+                        Console.WriteLine(movie.PlaybackUrl);
                     }
                     else
                     {
@@ -75,6 +81,31 @@ namespace Plex
                 if (keyInfo.Key == ConsoleKey.Escape)
                 {
                     continueRunning = false;
+                }
+            }
+        }
+
+        static async Task GetPlexMachineIdentifier()
+        {
+            using (var client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                client.DefaultRequestHeaders.Add("X-Plex-Token", PlexToken);
+
+                var response = await client.GetAsync($"{PlexBaseUrl}/");
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
+                var options = new JsonDocumentOptions { AllowTrailingCommas = true };
+                using (JsonDocument document = JsonDocument.Parse(content, options))
+                {
+                    var root = document.RootElement;
+                    var mediaContainer = root.GetProperty("MediaContainer");
+
+                    if (mediaContainer.TryGetProperty("machineIdentifier", out var machineIdentifier))
+                    {
+                        PlexMachineIdentifier = machineIdentifier.GetString();
+                    }
                 }
             }
         }
@@ -128,6 +159,13 @@ namespace Plex
                                 continue;
                             }
 
+                            // Extract the key/ratingKey for generating the playback URL
+                            string ratingKey = "";
+                            if (item.TryGetProperty("ratingKey", out var key))
+                            {
+                                ratingKey = key.GetString();
+                            }
+
                             var movie = new Movie
                             {
                                 Title = item.TryGetProperty("title", out var title) ? title.GetString() : "Unknown Title",
@@ -136,7 +174,10 @@ namespace Plex
                                 Rating = item.TryGetProperty("rating", out var rating) ? rating.GetDouble() : 0.0,
                                 Duration = item.TryGetProperty("duration", out var duration) ? duration.GetInt64() : 0,
                                 Watched = item.TryGetProperty("viewCount", out var viewCount) ? viewCount.GetInt32() > 0 : false,
-                                Genre = genreText
+                                Genre = genreText,
+                                PlaybackUrl = !string.IsNullOrEmpty(ratingKey) ? 
+                                    $"{PlexBaseUrl}/web/index.html#!/server/{PlexMachineIdentifier}/details?key=%2Flibrary%2Fmetadata%2F{ratingKey}" : 
+                                    "URL not available"
                             };
                             movies.Add(movie);
                         }
