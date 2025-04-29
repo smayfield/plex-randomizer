@@ -16,31 +16,43 @@ namespace Plex
 
         static async Task Main(string[] args)
         {
-            try
-            {
-                var movie = await GetRandomMovie();
-                
-                if (movie != null)
-                {
-                    Console.WriteLine("\nYour random movie selection:");
-                    Console.WriteLine($"Title: {movie.Title}");
-                    Console.WriteLine($"Year: {movie.Year}");
-                    Console.WriteLine($"Summary: {movie.Summary}");
-                    Console.WriteLine($"Rating: {movie.Rating}");
-                    Console.WriteLine($"Duration: {FormatDuration(movie.Duration)}");
-                }
-                else
-                {
-                    Console.WriteLine("No movies found in your library.");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-            }
+            bool continueRunning = true;
+            ConsoleKeyInfo keyInfo;
 
-            Console.WriteLine("\nPress any key to exit...");
-            Console.ReadKey();
+            while (continueRunning)
+            {
+                Console.Clear();
+                try
+                {
+                    var movie = await GetRandomMovie();
+                    
+                    if (movie != null)
+                    {
+                        Console.WriteLine("\nYour random movie selection:");
+                        Console.WriteLine($"Title: {movie.Title}");
+                        Console.WriteLine($"Year: {movie.Year}");
+                        Console.WriteLine($"Summary: {movie.Summary}");
+                        Console.WriteLine($"Rating: {movie.Rating}");
+                        Console.WriteLine($"Duration: {FormatDuration(movie.Duration)}");
+                    }
+                    else
+                    {
+                        Console.WriteLine("No movies found in your library.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error: {ex.Message}");
+                }
+
+                Console.WriteLine("\nPress any key to select a different movie or 'q' to quit...");
+                keyInfo = Console.ReadKey(true);
+                
+                if (keyInfo.Key == ConsoleKey.Q)
+                {
+                    continueRunning = false;
+                }
+            }
         }
 
         static async Task<Movie> GetRandomMovie()
