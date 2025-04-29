@@ -34,9 +34,12 @@ namespace Plex
             while (continueRunning)
             {
                 Console.Clear();
+                Console.WriteLine("Enter a genre you'd like to watch (or press Enter for any genre):");
+                string preferredGenre = Console.ReadLine()?.Trim() ?? string.Empty;
+                
                 try
                 {
-                    var movie = await GetRandomMovie();
+                    var movie = await GetRandomMovie(preferredGenre);
                     
                     if (movie != null)
                     {
@@ -51,7 +54,14 @@ namespace Plex
                     }
                     else
                     {
-                        Console.WriteLine("No movies found in your library.");
+                        if (!string.IsNullOrEmpty(preferredGenre))
+                        {
+                            Console.WriteLine($"No movies found in the '{preferredGenre}' genre.");
+                        }
+                        else
+                        {
+                            Console.WriteLine("No movies found in your library.");
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -69,7 +79,7 @@ namespace Plex
             }
         }
 
-        static async Task<Movie> GetRandomMovie()
+        static async Task<Movie> GetRandomMovie(string preferredGenre = "")
         {
             using (var client = new HttpClient())
             {
@@ -94,9 +104,10 @@ namespace Plex
                         {
                             // Extract genre information
                             string genreText = "Unknown";
+                            var genres = new List<string>();
+                            
                             if (item.TryGetProperty("Genre", out var genreArray))
                             {
-                                var genres = new List<string>();
                                 foreach (var genre in genreArray.EnumerateArray())
                                 {
                                     if (genre.TryGetProperty("tag", out var tag))
@@ -108,6 +119,13 @@ namespace Plex
                                 {
                                     genreText = string.Join(", ", genres);
                                 }
+                            }
+                            
+                            // Skip this movie if it doesn't match the preferred genre (if specified)
+                            if (!string.IsNullOrEmpty(preferredGenre) && 
+                                !genres.Any(g => g.Equals(preferredGenre, StringComparison.OrdinalIgnoreCase)))
+                            {
+                                continue;
                             }
 
                             var movie = new Movie
